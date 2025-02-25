@@ -1,5 +1,5 @@
 # !/bin/bash
-COMPOSE_PROJECT_NAME=budget
+COMPOSE_PROJECT_NAME=starter-kit
 DOMAIN_ROOT=m-celium
 
 docker network create "$COMPOSE_PROJECT_NAME" 2> /dev/null
