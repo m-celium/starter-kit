@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id    Int       @id @default(autoincrement())
+  email      String    @unique @db.VarChar(255)
+  created_at DateTime  @default(now()) @db.Timestamptz()
+  password   String    @db.VarChar(32)
+  
+  keys         UserKey[]
+  workspaces   UserWorkspace[]
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+model UserKey {
+  user_id    Int 
+  public_key Bytes  // публичный ключ для шифрования в base64
+  created_at DateTime
+  User       User @relation(fields: [user_id], references: [user_id])
+
+  @@id(name:"user_key_id", [user_id, created_at])
+  @@map("user_keys")
+}
+
+model UserWorkspace {
+  user_id      Int
+  workspace_id Int 
+  User         User      @relation(fields: [user_id], references: [user_id])
+  Workspace    Workspace @relation(fields: [workspace_id], references: [workspace_id])
+
+  @@id(name:"user_workspaces_id", [user_id, workspace_id])
+  @@map("x_user_workspaces")
+}
+
+model Workspace {
+  workspace_id   Int      @id @default(autoincrement())
+  created_at     DateTime @default(now()) @db.Timestamptz()
+  name           String // Зашифрованный
+  userWorkspaces UserWorkspace[]
+  deks           WorkspaceDek[]
+  categories     Category[]
+  transactions   Transaction[]
+
+  @@map("workspaces")
+}
+
+// TODO сделать ротацию DEK которые не используются
+model WorkspaceDek {
+  workspace_id Int 
+  dek          Bytes
+  iv           Bytes 
+  created_at   DateTime @default(now()) @db.Timestamptz()
+  until        DateTime @db.Timestamptz() // Ротация 
+  Workspace    Workspace @relation(fields: [workspace_id], references: [workspace_id])
+  
+
+  @@id(name: "workspace_deks_id", [workspace_id, until])
+  @@map("workspace_deks")
+}
+
+model Category {
+  category_id  Int @id @default(autoincrement())
+  name         Bytes // Зашифровано текущим раб пространстом
+  workspace_id Int 
+  Workspace    Workspace @relation(fields: [workspace_id], references: [workspace_id])
+  created_at   DateTime  @default(now()) @db.Timestamptz()
+  categoriesTransactions CategoryTransaction[]
+
+  @@map("categories")
+}
+
+model CategoryTransaction {
+  category_id Int
+  transaction_id Int
+
+  Category Category @relation(fields: [category_id], references: [category_id])
+  Transaction Transaction @relation(fields: [transaction_id], references: [transaction_id])
+
+  @@id(name: "x_categories_transactions_id", [category_id, transaction_id])
+  @@map("x_categories_transactions")
+}
+
+model Transaction {
+  user_id              Int 
+  workspace_id         Int
+  transaction_id       Int @id @default(autoincrement())
+  data                 Bytes // Blob Зашифрованный по ключу workspace
+  created_at           DateTime @default(now()) @db.Timestamptz()
+  date                 DateTime @db.Date() // Дата операции
+  categoryTransactions CategoryTransaction[]
+  User                 User @relation(fields: [user_id], references: [user_id])
+  Workspace            Workspace  @relation(fields: [workspace_id], references: [workspace_id])
+
+  @@map("transactions")
+}

@@ -1,0 +1,14 @@
+services:
+  api: 
+    build: api
+    ports:
+      - "3000:3000"
+    networks:
+      - web
+    labels:
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.rule=Host(`${APP_HOST}`) && PathRegexp(`^/api/v/([0-9]+)(/.*)?$`)
+
+networks:
+  web: 
+    external: true 
+    name: $NETWORK_NAME

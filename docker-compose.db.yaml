@@ -1,0 +1,22 @@
+services:
+  db:
+    build: db
+    environment:
+      POSTGRES_USER: $DB_USER
+      POSTGRES_PASSWORD: $DB_PASS
+    networks:
+      - web
+    ports:
+      - "5432:5432"
+    volumes:
+      - database:/var/lib/postgresql/data
+
+networks:
+  web:
+    external: true
+    name: $NETWORK_NAME
+
+volumes:
+  database:
+    external: true
+    name: ${COMPOSE_PROJECT_NAME}_database
